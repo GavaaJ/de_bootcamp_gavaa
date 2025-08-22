@@ -13,6 +13,7 @@ provider "aws" {
 }
 
 module "ec2-datatabase" {
+  count               = var.create_database ? 1 : 0
   source              = "./modules/ec2_instance"
   project             = var.project
   environment         = var.environment
