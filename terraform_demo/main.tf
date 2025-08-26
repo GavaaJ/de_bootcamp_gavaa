@@ -56,12 +56,12 @@ module "ec2-datatabase" {
 }
 
 module "ec2-airflow" {
-  count = var.create_airflow ? 1 : 0
+  count  = var.create_airflow ? 1 : 0
+  source = "./modules/ec2_instance"
   depends_on = [
     module.ec2-datatabase,
     module.network
   ]
-  source              = "./modules/ec2_instance"
   project             = var.project
   environment         = var.environment
   instance_type       = var.instance_type
@@ -101,6 +101,10 @@ module "ec2-airflow" {
         'apache-airflow-providers-dbt-cloud' \
         'apache-airflow-providers-common-sql' \
         'apache-airflow-providers-standard' \
+        'apache-airflow-providers-amazon' \
+        'apache-airflow-providers-postgres' \
+        'pandas' \
+        'sqlalchemy' \
          --constraint 'https://raw.githubusercontent.com/apache/airflow/constraints-2.9.2/constraints-3.11.txt'"
 
     # Redis
@@ -205,6 +209,10 @@ module "ec2-airflow" {
     systemctl start airflow-scheduler
     sleep 5
     systemctl start airflow-worker
+
+
+    sudo -u airflow aws s3 sync s3://${module.code_bucket.name}/dags/ /home/airflow/airflow/dags --delete
+
   EOF
 }
 
