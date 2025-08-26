@@ -25,6 +25,7 @@ module "ec2-datatabase" {
   airflow_logs_bucket = ""
   airflow_admin_user  = ""
   airflow_admin_pass  = ""
+  airflow_dags_bucket = ""
 
   private_ip = var.ip_addresses[0]
 
@@ -55,12 +56,12 @@ module "ec2-datatabase" {
 }
 
 module "ec2-airflow" {
-  count  = var.create_airflow ? 1 : 0
-  source = "./modules/ec2_instance"
+  count = var.create_airflow ? 1 : 0
   depends_on = [
     module.ec2-datatabase,
     module.network
   ]
+  source              = "./modules/ec2_instance"
   project             = var.project
   environment         = var.environment
   instance_type       = var.instance_type
@@ -71,6 +72,7 @@ module "ec2-airflow" {
   airflow_logs_bucket = module.data_bucket.bucket_name
   airflow_admin_user  = var.airflow_admin_user
   airflow_admin_pass  = var.airflow_admin_pass
+  airflow_dags_bucket = module.code_bucket.bucket_name
 
   private_ip = var.ip_addresses[1]
 

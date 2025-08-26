@@ -5,8 +5,9 @@ resource "aws_instance" "this" {
   vpc_security_group_ids      = var.security_group_ids
   iam_instance_profile        = aws_iam_instance_profile.profile.name
   associate_public_ip_address = true
-  key_name                    = "demo-key"
-  user_data                   = local.user_data
+
+  key_name  = "demo-key"
+  user_data = local.user_data
 
   private_ip = var.private_ip
 
