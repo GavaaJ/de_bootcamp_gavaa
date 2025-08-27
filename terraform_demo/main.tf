@@ -231,15 +231,17 @@ module "data_bucket" {
 }
 
 module "batch" {
-  source              = "./modules/batch"
-  project             = var.project
-  environment         = var.environment
-  vpc_id              = module.network.vpc_id            # "vpc-0f5054b82002f0a7e"
-  private_subnet_ids  = module.network.public_subnet_ids # ["subnet-03465900935463829", "subnet-0b8b5acfc787140a9", "subnet-0f802c033e4147ac2"]
-  dbt_container_image = var.dbt_container_image
-  dbt_vcpu            = var.dbt_vcpu
-  dbt_memory          = var.dbt_memory
-  aws_region          = var.aws_region
+  source                  = "./modules/batch"
+  project                 = var.project
+  environment             = var.environment
+  vpc_id                  = module.network.vpc_id
+  private_subnet_ids      = module.network.private_subnet_ids
+  dbt_container_image     = var.dbt_container_image
+  dbt_vcpu                = var.dbt_vcpu
+  dbt_memory              = var.dbt_memory
+  aws_region              = var.aws_region
+  private_route_table_ids = module.network.private_route_table_ids
+  depends_on              = [module.network]
 }
 
 module "network" {
