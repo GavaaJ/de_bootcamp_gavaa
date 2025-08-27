@@ -1,6 +1,6 @@
 environment         = "dev"
 project             = "data-lake"
-instance_type       = "t3a.medium"
+instance_type       = "c7i-flex.large"
 bucket_name         = "gavaa"
 aws_region          = "ap-southeast-2"
 airflow_admin_user  = "gavaa"
