@@ -5,7 +5,7 @@ bucket_name         = "gavaa"
 aws_region          = "ap-southeast-2"
 airflow_admin_user  = "gavaa"
 airflow_admin_pass  = "6210"
-dbt_container_image = "croixbleueqc/dbt:latest"
+dbt_container_image = "473191218586.dkr.ecr.ap-southeast-2.amazonaws.com/dbt:latest"
 
 csv_objects = {
   "customers/customers.csv"       = "../datasets/customers.csv",
