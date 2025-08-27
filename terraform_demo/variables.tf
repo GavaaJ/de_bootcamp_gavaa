@@ -87,4 +87,4 @@ variable "ip_addresses" {
   description = "List of IP addresses to allow access to the Airflow web server"
   type        = list(string)
 }
- 
+
