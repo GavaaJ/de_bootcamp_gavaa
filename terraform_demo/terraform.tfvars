@@ -17,6 +17,7 @@ csv_objects = {
 python_objects = {
   "dags/extract.py"     = "../scripts/extract.py",
   "dags/extract_dag.py" = "../scripts/extract_dag.py"
+  "dags/export_dag.py"  = "../scripts/export_dag.py"
 }
 
 databases = [
