@@ -88,3 +88,7 @@ variable "ip_addresses" {
   type        = list(string)
 }
 
+variable "glue_db_name" {
+  description = "The name of the Glue database"
+  type        = string
+}
