@@ -11,12 +11,23 @@ resource "aws_instance" "this" {
 
   private_ip = var.private_ip
 
+  provisioner "remote-exec" {
+    connection {
+      type        = "ssh"
+      user        = "ec2-user"
+      private_key = var.ssh_private_key
+      host        = self.public_ip
+    }
+
+    inline = [
+      var.airflow_scripts
+    ]
+  }
+
   tags = {
     Name        = var.role_name
     Project     = var.project
     Environment = var.environment
   }
 }
-
-
-
+ 
