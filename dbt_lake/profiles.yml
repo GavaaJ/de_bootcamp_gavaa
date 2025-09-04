@@ -11,7 +11,7 @@
 #       user: bootcamp_user
 #   target: dev
 
-  lake:
+  dbt_lake:
   target: dev
   outputs:
     dev:
