@@ -11,11 +11,7 @@ terraform {
 provider "aws" {
   region = "ap-southeast-2"
 }
-# create_database = true => 1
-# create_database = false => 0
-# 1 create database
-# 0 destroy
-# example: if 1=1 ? equal : not equal
+
 module "ec2-datatabase" {
   count  = var.create_database ? 1 : 0
   source = "./modules/ec2_instance"
@@ -272,18 +268,3 @@ module "network" {
 
 
 
-# module "ec2_instance" {
-#   source = "git::https://github.com/terraform-aws-modules/terraform-aws-ec2-instance.git?ref=v5.8.0"
-
-#   name = "single-instance"
-
-#   instance_type = "t2.micro"
-#   key_name      = "demo-key"
-#   monitoring    = true
-#   subnet_id     = "subnet-0b03f4786e476b378"
-
-#   tags = {
-#     Terraform   = "true"
-#     Environment = "dev"
-#   }
-# }
