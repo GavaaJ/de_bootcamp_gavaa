@@ -14,7 +14,7 @@ from airflow.operators.python import get_current_context
 POSTGRES_CONN_ID = Variable.get("PG_CONN_ID", default_var="postgres_default")
 SCHEMA           = Variable.get("PG_SCHEMA", default_var="public")
 TABLES           = Variable.get("PG_TABLES", default_var="customers,accounts,transactions").split(",")
-S3_BUCKET        = Variable.get("LAKE_BUCKET", default_var="data-lake-dev-buku")
+S3_BUCKET        = Variable.get("LAKE_BUCKET", default_var="data-lake-dev-gavaa")
 S3_PREFIX        = Variable.get("LAKE_RAW_PREFIX", default_var="raw")
 CHUNK_ROWS       = int(Variable.get("EXPORT_CHUNK_ROWS", default_var="200000"))  # tune if needed
 
