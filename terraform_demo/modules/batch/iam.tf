@@ -45,8 +45,13 @@ resource "aws_iam_role" "task_role" {
   })
 }
 
+resource "aws_iam_role_policy_attachment" "batch_attach_glue" {
+  role       = aws_iam_role.task_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AWSGlueConsoleFullAccess"
+}
+
 # Logs
 resource "aws_cloudwatch_log_group" "batch" {
   name              = "/aws/batch/${local.name}"
   retention_in_days = 7
-} 
+}
