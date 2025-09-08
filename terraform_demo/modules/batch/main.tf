@@ -1,5 +1,5 @@
 # Interface endpoints
-locals { ifaces = ["ecr.api", "ecr.dkr", "logs", "sts"] }
+locals { ifaces = ["ecr.api", "ecr.dkr", "logs", "sts", "glue", "athena"] }
 resource "aws_vpc_endpoint" "ifaces" {
   for_each            = toset([for s in local.ifaces : "com.amazonaws.${var.aws_region}.${s}"])
   vpc_id              = var.vpc_id
@@ -54,7 +54,7 @@ resource "aws_batch_job_definition" "dbt" {
   platform_capabilities = ["FARGATE"]
   container_properties = jsonencode({
     image : var.dbt_container_image,
-    command : ["run"], # replace with your dbt command
+    command : ["run"],
     fargatePlatformConfiguration : { platformVersion : "LATEST" },
     resourceRequirements : [
       { type : "VCPU", value : tostring(var.dbt_vcpu) },
