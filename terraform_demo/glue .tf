@@ -8,6 +8,11 @@ resource "aws_glue_catalog_database" "raw" {
   }
 }
 
+resource "aws_s3_object" "raw_directory" {
+  bucket = module.data_bucket.bucket_name
+  key    = "raw/"
+}
+
 resource "aws_glue_catalog_database" "clean" {
   name         = var.glue_db_name[1] # clean
   description  = "Glue DB over ${local.clean_uri}"
@@ -23,9 +28,34 @@ resource "aws_s3_object" "clean_directory" {
   key    = "clean/"
 }
 
-resource "aws_s3_object" "raw_directory" {
+resource "aws_glue_catalog_database" "warehouse" {
+  name         = var.glue_db_name[2] # warehouse
+  description  = "Glue DB over ${local.warehouse_uri}"
+  location_uri = local.warehouse_uri
+  tags = {
+    Project = "bootcamp",
+    Env     = "dev"
+  }
+}
+
+resource "aws_s3_object" "warehouse_directory" {
   bucket = module.data_bucket.bucket_name
-  key    = "raw/"
+  key    = "warehouse/"
+}
+
+resource "aws_glue_catalog_database" "mart" {
+  name         = var.glue_db_name[3] # mart
+  description  = "Glue DB over ${local.mart_uri}"
+  location_uri = local.mart_uri
+  tags = {
+    Project = "bootcamp",
+    Env     = "dev"
+  }
+}
+
+resource "aws_s3_object" "mart_directory" {
+  bucket = module.data_bucket.bucket_name
+  key    = "mart/"
 }
 
 # ---------- customers ----------
