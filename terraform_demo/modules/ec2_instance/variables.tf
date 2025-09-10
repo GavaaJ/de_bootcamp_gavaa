@@ -1,13 +1,11 @@
 variable "instance_type" {
   description = "The type of instance to start"
   type        = string
-
 }
 
 variable "subnet_id" {
   description = "The ID of the subnet in which to launch the instance"
   type        = string
-  default     = ""
 }
 
 variable "project" {
@@ -29,16 +27,19 @@ variable "vpc_id" {
 variable "airflow_logs_bucket" {
   description = "The S3 bucket for Airflow logs"
   type        = string
+  default     = ""
 }
 
 variable "airflow_admin_user" {
   description = "The Airflow admin user name"
   type        = string
+  default     = ""
 }
 
 variable "airflow_admin_pass" {
   description = "The Airflow admin user password"
   type        = string
+  default     = ""
 }
 
 variable "security_group_ids" {
@@ -78,6 +79,6 @@ variable "ssh_private_key" {
 }
 
 variable "enable_airflow_seed" {
-  type    = bool
-  default = true
+  description = "Whether to enable the Airflow seeding process"
+  type        = bool
 }
