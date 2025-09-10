@@ -153,3 +153,163 @@ resource "aws_glue_catalog_table" "raw_customers" {
     }
   }
 }
+
+# ---------- accounts ----------
+resource "aws_glue_catalog_table" "raw_accounts" {
+  name          = "accounts"
+  database_name = var.glue_db_name[0]
+  table_type    = "EXTERNAL_TABLE"
+
+  parameters = {
+    classification        = "parquet"
+    EXTERNAL              = "TRUE"
+    "parquet.compression" = "SNAPPY"
+  }
+
+  partition_keys {
+    name = "load_date"
+    type = "string"
+  }
+
+  storage_descriptor {
+    location          = "${local.raw_uri}accounts/"
+    input_format      = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat"
+    output_format     = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat"
+    number_of_buckets = -1
+
+    ser_de_info {
+      serialization_library = "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe"
+    }
+
+    # ---- columns to match your raw parquet schema ----
+    columns {
+      name = "account_id"
+      type = "string"
+    }
+
+    columns {
+      name = "customer_id"
+      type = "string"
+    }
+    columns {
+      name = "bank_name"
+      type = "string"
+    }
+    columns {
+      name = "branch_name"
+      type = "string"
+    }
+    columns {
+      name = "bank_code"
+      type = "string"
+    }
+    columns {
+      name = "swift_code"
+      type = "string"
+    }
+    columns {
+      name = "account_type"
+      type = "string"
+    }
+    columns {
+      name = "opening_date"
+      type = "string"
+    }
+    columns {
+      name = "balance"
+      type = "string"
+    }
+    columns {
+      name = "status"
+      type = "string"
+    }
+    columns {
+      name = "interest_rate"
+      type = "string"
+    }
+    columns {
+      name = "currency"
+      type = "string"
+    }
+  }
+}
+
+# ---------- transactions ----------
+resource "aws_glue_catalog_table" "raw_transactions" {
+  name          = "transactions"
+  database_name = var.glue_db_name[0]
+  table_type    = "EXTERNAL_TABLE"
+
+  parameters = {
+    classification        = "parquet"
+    EXTERNAL              = "TRUE"
+    "parquet.compression" = "SNAPPY"
+  }
+
+  partition_keys {
+    name = "load_date"
+    type = "string"
+  }
+
+  storage_descriptor {
+    location          = "${local.raw_uri}transactions/"
+    input_format      = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat"
+    output_format     = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat"
+    number_of_buckets = -1
+
+    ser_de_info {
+      serialization_library = "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe"
+    }
+
+    # ---- columns to match your raw parquet schema ----
+    columns {
+      name = "transaction_id"
+      type = "string"
+    }
+
+    columns {
+      name = "account_id"
+      type = "string"
+    }
+    columns {
+      name = "bank_name"
+      type = "string"
+    }
+    columns {
+      name = "transaction_type"
+      type = "string"
+    }
+    columns {
+      name = "amount"
+      type = "string"
+    }
+    columns {
+      name = "currency"
+      type = "string"
+    }
+    columns {
+      name = "transaction_date"
+      type = "string"
+    }
+    columns {
+      name = "status"
+      type = "string"
+    }
+    columns {
+      name = "description"
+      type = "string"
+    }
+    columns {
+      name = "merchant_name"
+      type = "string"
+    }
+    columns {
+      name = "reference"
+      type = "string"
+    }
+    columns {
+      name = "transaction_category"
+      type = "string"
+    }
+  }
+}
