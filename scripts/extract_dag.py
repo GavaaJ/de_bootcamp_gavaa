@@ -1,103 +1,73 @@
-from __future__ import annotations
-import os, io, tempfile
-from datetime import datetime
-import boto3
-import pandas as pd
-import pyarrow as pa
-import pyarrow.parquet as pq
-from airflow.decorators import dag, task
-from airflow.models import Variable
+from airflow import DAG
+from airflow.operators.python import PythonOperator
+from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 from airflow.providers.postgres.hooks.postgres import PostgresHook
-from airflow.operators.python import get_current_context
+from datetime import datetime, timedelta
+import pandas as pd
+import io
 
-# --- Config (edit or set as Airflow Variables) ---
-POSTGRES_CONN_ID = Variable.get("PG_CONN_ID", default_var="postgres_default")
-SCHEMA           = Variable.get("PG_SCHEMA", default_var="public")
-TABLES           = Variable.get("PG_TABLES", default_var="customers,accounts,transactions").split(",")
-S3_BUCKET        = Variable.get("LAKE_BUCKET", default_var="data-lake-dev-buku")
-S3_PREFIX        = Variable.get("LAKE_RAW_PREFIX", default_var="raw")
-CHUNK_ROWS       = int(Variable.get("EXPORT_CHUNK_ROWS", default_var="200000"))  # tune if needed
+default_args = {
+    'owner': 'airflow',
+    'depends_on_past': False,
+    'start_date': datetime(2025, 1, 1),
+    'email_on_failure': False,
+    'email_on_retry': False,
+    'retries': 1,
+    'retry_delay': timedelta(minutes=5)
+}
 
-def _export_one_table(table: str, ds: str):
-    """Read table from Postgres in chunks and write Parquet parts to s3://bucket/prefix/<table>/load_date=YYYY-MM-DD/"""
-    hook = PostgresHook(postgres_conn_id=POSTGRES_CONN_ID)
-    engine = hook.get_sqlalchemy_engine()
-    s3 = boto3.client("s3")
+# Dictionary mapping S3 keys to table names
+S3_KEYS = {
+    'customers': 'landing/customers/customers.csv',
+    'accounts': 'landing/accounts/accounts.csv',
+    'transactions': 'landing/transactions/transactions.csv'
+}
 
-    target_prefix = f"{S3_PREFIX}/{table}/load_date={ds}/"
-    sql = f'SELECT * FROM "{SCHEMA}"."{table}"'  # quoted to be safe
+def load_csv_to_postgres(table_name: str, s3_key: str):
+    """Load CSV from S3 and insert into PostgreSQL"""
+    # Get S3 object
+    s3_hook = S3Hook(aws_conn_id='aws_default')
+    bucket_name = 'data-lake-dev-buku'
 
-    part = 0
-    with engine.connect() as conn:
-        for df in pd.read_sql(sql, conn, chunksize=CHUNK_ROWS):
-            if df.empty:
-                continue
+    # Read CSV file from S3
+    s3_object = s3_hook.get_key(key=s3_key, bucket_name=bucket_name)
+    csv_content = s3_object.get()['Body'].read().decode('utf-8')
+    df = pd.read_csv(io.StringIO(csv_content))
 
-            if table == "customers":
-                df['id_number'] = df['id_number'].astype(str)
-                df['phone_number'] = df['phone_number'].astype(str)
-                df['postal_code'] = df['postal_code'].astype(str)
-                df['credit_score'] = df['credit_score'].astype(str)
+    # Load to PostgreSQL
+    postgres_hook = PostgresHook(postgres_conn_id='postgres_default')
+    engine = postgres_hook.get_sqlalchemy_engine()
 
-                schema_pa = pa.schema([
-                    pa.field('customer_code', pa.string()),
-                    pa.field('first_name', pa.string()),
-                    pa.field('last_name', pa.string()),
-                    pa.field('id_number', pa.string()),
-                    pa.field('date_of_birth', pa.string()),
-                    pa.field('gender', pa.string()),
-                    pa.field('email', pa.string()),
-                    pa.field('phone_number', pa.string()),
-                    pa.field('province', pa.string()),
-                    pa.field('city', pa.string()),
-                    pa.field('postal_code', pa.string()),
-                    pa.field('income_bracket', pa.string()),
-                    pa.field('employment_status', pa.string()),
-                    pa.field('credit_score', pa.string()),
-                    pa.field('primary_bank', pa.string()),
-                    pa.field('primary_branch', pa.string())
-                ])
+    print(f"Inserting {len(df)} records into {table_name}...")
+    df.to_sql(
+        table_name,
+        engine,
+        if_exists='append',
+        index=False
+    )
+    print(f"{table_name} inserted successfully.")
 
-                table_pa = pa.Table.from_pandas(df, preserve_index=False, schema=schema_pa)
-            elif table == "accounts":
-                df['bank_code'] = df['bank_code'].astype(str)
-                df['balance'] = df['balance'].astype(str)
-                df['interest_rate'] = df['interest_rate'].astype(str)
-            else:
-                df['amount'] = df['amount'].astype(str)
+with DAG(
+    'load_csv_to_postgres',
+    default_args=default_args,
+    description='Load CSV files from S3 to PostgreSQL',
+    schedule_interval='@daily',
+    catchup=False
+) as dag:
 
-            table_pa = pa.Table.from_pandas(df, preserve_index=False)
+    # Create a task for each table
+    tasks = []
+    for table_name, s3_key in S3_KEYS.items():
+        task = PythonOperator(
+            task_id=f'load_{table_name}',
+            python_callable=load_csv_to_postgres,
+            op_kwargs={
+                'table_name': table_name,
+                's3_key': s3_key
+            }
+        )
+        tasks.append(task)
 
-            # write to memory (fast) and upload
-            buf = io.BytesIO()
-            pq.write_table(table_pa, buf, compression="snappy")
-            buf.seek(0)
-
-            key = f"{target_prefix}part-{part:05d}.snappy.parquet"
-            s3.put_object(Bucket=S3_BUCKET, Key=key, Body=buf.getvalue())
-            part += 1
-
-    # if nothing was written, still create a _SUCCESS marker so downstream is predictable
-    if part == 0:
-        s3.put_object(Bucket=S3_BUCKET, Key=f"{target_prefix}_EMPTY")
-    else:
-        s3.put_object(Bucket=S3_BUCKET, Key=f"{target_prefix}_SUCCESS")
-
-@dag(
-    dag_id="export_postgres_to_s3_raw_parquet",
-    schedule="@daily",
-    start_date=datetime(2025, 1, 1),
-    catchup=False,
-    default_args={"owner": "data-eng", "retries": 1},
-    tags=["export","postgres","s3","parquet","lake"],
-)
-
-def export_postgres_to_s3_raw_parquet():
-    @task
-    def export_table(table: str):
-        ds = get_current_context()["ds"]
-        _export_one_table(table, ds)
-
-    export_table.expand(table=TABLES)
-
-export_postgres_to_s3_raw_parquet()
+    # Set task dependencies (run in sequence)
+    for i in range(len(tasks) - 1):
+        tasks[i] >> tasks[i + 1]

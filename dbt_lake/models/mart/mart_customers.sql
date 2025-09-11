@@ -2,7 +2,8 @@
     materialized='incremental',
     incremental_strategy='append',
     unique_key='customer_code',
-    on_schema_change='sync_all_columns'
+    on_schema_change='sync_all_columns',
+    alias='mart_customers'
 ) }}
 
 WITH customers AS (
@@ -23,10 +24,9 @@ WITH customers AS (
         employment_status,
         credit_score,
         primary_bank,
-        primary_branch,
-        load_date
+        primary_branch
     FROM
-        {{ ref('customers') }}
+        {{ ref('warehouse_customers') }}
 )
 
 SELECT
@@ -45,7 +45,5 @@ SELECT
     employment_status,
     credit_score,
     primary_bank,
-    primary_branch,
-    load_date
+    primary_branch
 FROM customers c
- 

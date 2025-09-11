@@ -14,7 +14,7 @@ from airflow.operators.python import get_current_context
 POSTGRES_CONN_ID = Variable.get("PG_CONN_ID", default_var="postgres_default")
 SCHEMA           = Variable.get("PG_SCHEMA", default_var="public")
 TABLES           = Variable.get("PG_TABLES", default_var="customers,accounts,transactions").split(",")
-S3_BUCKET        = Variable.get("LAKE_BUCKET", default_var="data-lake-dev-gavaa")
+S3_BUCKET        = Variable.get("LAKE_BUCKET", default_var="data-lake-dev-buku")
 S3_PREFIX        = Variable.get("LAKE_RAW_PREFIX", default_var="raw")
 CHUNK_ROWS       = int(Variable.get("EXPORT_CHUNK_ROWS", default_var="200000"))  # tune if needed
 
@@ -59,8 +59,14 @@ def _export_one_table(table: str, ds: str):
                 ])
 
                 table_pa = pa.Table.from_pandas(df, preserve_index=False, schema=schema_pa)
+            elif table == "accounts":
+                df['bank_code'] = df['bank_code'].astype(str)
+                df['balance'] = df['balance'].astype(str)
+                df['interest_rate'] = df['interest_rate'].astype(str)
             else:
-                table_pa = pa.Table.from_pandas(df, preserve_index=False)
+                df['amount'] = df['amount'].astype(str)
+
+            table_pa = pa.Table.from_pandas(df, preserve_index=False)
 
             # write to memory (fast) and upload
             buf = io.BytesIO()
