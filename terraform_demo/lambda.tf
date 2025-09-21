@@ -4,9 +4,9 @@ resource "aws_iam_role" "lambda_exec" {
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
     Statement = [{
-      Effect = "Allow",
+      Effect    = "Allow",
       Principal = { Service = "lambda.amazonaws.com" },
-      Action = "sts:AssumeRole"
+      Action    = "sts:AssumeRole"
     }]
   })
 }
@@ -24,31 +24,28 @@ data "archive_file" "lambda_zip" {
 }
 
 resource "aws_s3_object" "lambda_zip" {
-  bucket = module.code_bucket.bucket_name
-  key    = "lambda/lambda.zip"
-  source = data.archive_file.lambda_zip.output_path
-  etag   = filemd5(data.archive_file.lambda_zip.output_path)
+  bucket                 = module.code_bucket.bucket_name
+  key                    = "lambda/lambda.zip"
+  source                 = data.archive_file.lambda_zip.output_path
+  etag                   = filemd5(data.archive_file.lambda_zip.output_path)
   content_type           = "application/zip"
   server_side_encryption = "AES256"
 }
 
 # Lambda function
 resource "aws_lambda_function" "api_reader" {
-  function_name    = "${var.project}-api-reader"
-  role             = aws_iam_role.lambda_exec.arn
-  handler          = "lambda_function.handler"
-  runtime          = "python3.8"
+  function_name = "${var.project}-api-reader"
+  role          = aws_iam_role.lambda_exec.arn
+  handler       = "youtube-api.handler"
+  runtime       = "python3.12"
 
-  s3_bucket        = module.code_bucket.bucket_name
-  s3_key           = aws_s3_object.lambda_zip.key
+  s3_bucket = module.code_bucket.bucket_name
+  s3_key    = aws_s3_object.lambda_zip.key
 
-  timeout          = 15
+  timeout = 15
 
   environment {
     variables = {
-      MODE      = var.mode
-      YT_QUERY  = var.yt_query
-      YT_API_KEY = var.yt_api_key
     }
   }
 }
