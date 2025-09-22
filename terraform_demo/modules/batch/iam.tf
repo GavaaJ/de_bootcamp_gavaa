@@ -70,4 +70,3 @@ resource "aws_cloudwatch_log_group" "batch" {
   name              = "/aws/batch/${local.name}"
   retention_in_days = 7
 }
-
