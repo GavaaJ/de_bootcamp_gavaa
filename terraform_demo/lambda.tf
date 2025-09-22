@@ -46,7 +46,12 @@ resource "aws_lambda_function" "api_reader" {
 
   environment {
     variables = {
+      MAX_VIDEOS    = "5"
+      MAX_COMMENTS  = "10"
+      YT_QUERY      = "data engineering"
+      SECRET_NAME   = local.yt_api_key
+      OUTPUT_BUCKET = module.data_bucket.bucket_name
     }
   }
 }
- 
+
